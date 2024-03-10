@@ -1,116 +1,165 @@
 #include <iostream>
-using std::cin;
 using std::cout;
-using std::endl;
+using std::cin;
 using std::cerr;
+using std::endl;
 
-void populateMatrix(double& matrix[][], int row, int column){
-	fo(int i = 0; i < row; i++){
-		for(int j = 0; j < column; j++){
-			cin >> matrix[i][j];
-		}
-	}
+#include <vector>
+using std::vector;
+
+struct Matrix{
+  int size;
+  vector<vector<double>> data;
+
+  //constructor to initialise matrix with given size
+  Matrix(int n): size(n), data(n, vector<double>(n)){}
+};
+
+Matrix addMatrices(const Matrix& A, const Matrix& B){
+  int n = A.size;
+  Matrix sum(n);
+
+  for(int i = 0; i < n; i++){
+    for(int j = 0; j < n; j++){
+      sum.data[i][j] = A.data[i][j] + B.data[i][j];
+    }
+  }
+
+  return sum;
 }
 
-int checkDimension(int row, int col){
-	if(column > 6 || row > 6){
-		cerr << "dimension should not greater than 6 by 6" << endl;
-		return 1;
-	}
+Matrix subtractMatrices(const Matrix& A, const Matrix& B){
+  int n = A.size;
+  Matrix difference(n);
+
+  for(int i = 0; i < n; i++){
+    for(int j = 0; j < n; j++){
+      difference.data[i][j] = A.data[i][j] - B.data[i][j];
+    }
+  }
+
+  return difference;
 }
 
-int checkCompatibility(int column1, int row2){
-	if(column1 != row2){
-		cerr << "first column must be equal to second row" << endl
-		return 1;
-	}
+Matrix  naiveMultiplyMatrices(const Matrix& A, const Matrix& B){
+  int n = A.size;
+  Matrix product(n);
+
+  for(int i = 0; i < n; i++){
+    for(int j = 0; j < n; j++){
+      for(int k = 0; k < n; k++){
+	product.data[i][j] += A.data[i][k] * B.data[k][j];
+      }
+    }
+  }
+
+  return product;
 }
 
-void strassenMultily(double& matrix1[][], double& matrix2[][], double& matrix3[][], int row1, int column1, int row2, int column2/* int row1const, int column2const*/){
-/*	//divide the matrices into n/2
-	int row1a = row1/2;
-	int colummn1a = column1/2;
-	
-	double matrix1a[row1a][column1a];
-	
-	int row2a = row2/2;
-	int column2a = column2/2;
-	
-	double matrix2a[row2a][column2a];
-	
-	//multiply draft, we make this recursive 
-	double a = matrix1[0][0] * matrix2[0][0];
-	double b = matrix1[0][1] * matrix2[1][0];
-	double c = matrix1[0][0] * matrix2[0][1];
-	double d = matrix1[0][1] * matrix2[1][1];
-	double e = matrix1[1][0] * matrix2[0][0];
-	double f = matrix1[1][1] * matrix2[1][0];
-	double g = matrix1[1][1] * matrix2[0][1];
-	double h = matrix1[1][1] * matrix2[1][1];
-	
-	//adding
-	for(int i = 0; i < row1; i++){
-		for(int j = 0; j < column2; j++){
-			matrix3[i][j] = a + b
-		}
-	} */
-/*	int row1const = row1
-	int column2const = column2;
-	
-	int row1a = row1/2;
-	int colummn1a = column1/2;
-	
-	double matrix1a[row1a][column1a];
-	
-	int row2a = row2/2;
-	int column2a = column2/2;
-	
-	double matrix2a[row2a][column2a];
-	
-	strassenMultiply(matrix1a, matrix2a, row1a, column2a, row2a, column2a, row1const, column2const);
-	
-	int numMults = 8;
-	
-	double arrayproduct[numMults];
-	
-	for(int i = 0; i < numMults ; i++){
-			arrayproduct[i] = matrix1a[0][0] * matrix2a[0][0];
-	} forgot implementation*/ 
+Matrix multiplyMatrices(const Matrix& A, const Matrix& B){
+  int n = A.size;
+  Matrix product(n);
+
+  //base case: if the matrices are 1 by 1
+  if(n == 1){
+    product.data[0][0] = A.data[0][0] * B.data[0][0];
+    return product;
+  }
+
+  //split the matrices into quadrants
+  int newSize = n/2;
+
+  //create submatrices of A and B
+  //using temporary storages
+  Matrix A11(newSize), A12(newSize), A21(newSize), A22(newSize);
+  Matrix B11(newSize), B12(newSize), B21(newSize), B22(newSize);
+
+  //divide A into quadrants
+  for(int i = 0; i < newSize; i++){
+    for(int j = 0; j < newSize; j++){
+      A11.data[i][j] = A.data[i][j];
+      A12.data[i][j] = A.data[i][j + newSize];
+      A21.data[i][j] = A.data[i + newSize][j];
+      A22.data[i][j] = A.data[i + newSize][j + newSize];
+    }
+  }
+
+  //divide B into quadrants
+  for(int i = 0; i < newSize; i++){
+    for(int j = 0; j < newSize; j++){
+      B11.data[i][j] = B.data[i][j];
+      B12.data[i][j] = B.data[i][j + newSize];
+      B21.data[i][j] = B.data[i + newSize][j];
+      B22.data[i][j] = B.data[i + newSize][j + newSize];
+    }
+  }
+
+  //calculate intermediate matrices
+  Matrix M1 = multiplyMatrices(addMatrices(A11, A22), addMatrices(B11, B22));
+  Matrix M2 = multiplyMatrices(addMatrices(A21, A22), B11);
+  Matrix M3 = multiplyMatrices(A11, subtractMatrices(B12, B22));
+  Matrix M4 = multiplyMatrices(A22, subtractMatrices(B21, B11));
+  Matrix M5 = multiplyMatrices(addMatrices(A11, A12), B22);
+  Matrix M6 = multiplyMatrices(subtractMatrices(A12, A22), addMatrices(B11, B12));
+  Matrix M7 = multiplyMatrices(subtractMatrices(A12, A22), addMatrices(B21, B22));
+
+  //calculate product matrix
+  Matrix C11 = addMatrices(subtractMatrices(addMatrices(M1, M4), M5), M7);
+  Matrix C12 = addMatrices(M3, M5);
+  Matrix C21 = addMatrices(M2, M4);
+  Matrix C22 = addMatrices(subtractMatrices(addMatrices(M1, M3), M2), M6);
+
+  //fill product matrix
+  for(int i = 0; i < newSize; i++){
+    for(int j = 0; j < newSize; j++){
+      product.data[i][j] = C11.data[i][j];
+      product.data[i][j + newSize] = C12.data[i][j];
+      product.data[i + newSize][j] = C21.data[i][j];
+      product.data[i + newSize][j + newSize] = C22.data[i][j];
+    }
+  }
+
+  return product;
 }
 
-
-
-
-
+void printMatrix(const Matrix& m){
+  for(int i = 0; i < m.size; i++){
+    for(int j = 0; j < m.size; j++){
+      cout << m.data[i][j] << " ";
+    }
+    cout << endl;
+  }
+}
 
 int main(){
-	int row1, column2;
-	int row2, column2
-	cout << "enter dimension for the matrix1 row first then column" << endl;
-	cin >> row >> column;
-	//insert dimension check
-	checkDimension(row1, column1);
-	
-	double matrix1[row1][column1];
-	populateMatrix(matrix1[][], row1, column2);
+  int size;
+  cout << "enter size of matrices: ";
+  cin >> size;
 
-	cout << "enter dimension for the matrix2 row first then column" << endl;
-	cin >> row2 >> column2;	
-	checkDimension(row2, column2);
-	//inssert dimension check
-	
-	//insert compatibility check
-	checkCompatibility(column1, row2);
-	
-	double matrix2[][];
-	populateMatrix(matrix2[][], row2, column2);
-	
-	//product matrix
-	double matrix3[row1][column2];
-	populateMatrix(matrix3[][]), row1, column2;
-	
-	strassenMultiply(matrix1[][], matrix2[][], matrix3[][], row1, column1, row2, column2, row1, column2);	
-	
-	return 0;
+  //create matrices
+  Matrix A(size), B(size);
+
+  //input matrices
+  cout << "enter elements of matrix a: " << endl;
+  for(int i = 0; i < size; i++){
+    for(int j = 0; j < size; j++){
+      cin >> A.data[i][j];
+    }
+  }
+  
+  cout << "enter elements of matrix b: " << endl;
+  for(int i = 0; i < size; i++){
+    for(int j = 0; j < size; j++){
+      cin >> B.data[i][j];
+    }
+  }
+
+  //multiply matrices using divide and conquer
+  Matrix result = multiplyMatrices(A, B);
+
+  //print the result
+  cout << "Resultant matrix: " << endl;
+  printMatrix(result);
+
+  return 0;
 }
-

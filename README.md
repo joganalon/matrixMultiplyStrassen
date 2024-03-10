@@ -6,7 +6,8 @@ This repository contains two implementations of matrix multiplication algorithms
 
 ### `strassen`
 
-The `strassen` code implements the Strassen algorithm for matrix multiplication. Here's a brief overview of the components:
+The `strassen` code implements the Strassen algorithm for matrix multiplication. This is a fleshed out version of the my initial implementation of the Strassen algorithm, developed during a class session. 
+Here's a brief overview of the components:
 
 - **`Matrix` struct**: Defines a matrix structure with a size and data stored in a vector of vectors.
 - **`addMatrices` function**: Adds two matrices element-wise.

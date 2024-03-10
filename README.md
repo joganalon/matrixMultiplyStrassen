@@ -38,6 +38,10 @@ To use these implementations:
 3. Run the executable and follow the prompts to input matrix sizes and elements.
 4. View the resulting product matrix.
 
+## Planned Changes
+
+- Both implementations are subject to future modifications to enhance performance, readability, or functionality.
+
 ## Notes
 
 - The `strassen` implementation uses a traditional vector of vectors to represent matrices.

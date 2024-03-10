@@ -7,42 +7,57 @@ using std::endl;
 #include <vector>
 using std::vector;
 
+#include <stdexcept>
+using std::invalid_argument;
+using std::exception;
+
 struct Matrix{
-  vector<vector<double>> data;
+  int size;
+  vector<double> data;
 
   //constructor
-  Matrix(int size): data(size, vector<double>(size)) {}
+  Matrix(int size): size(size), data(size * size) {}
+
+  //access element in row-major order
+  double& operator()(int row, int column){
+    return data[row * size + column];
+  }
+
+  //ditto (constant version)
+  const double& operator()(int row, int column) const{
+    return data[row * size + column];
+  }
 };
 
 Matrix addMatrices(const Matrix& A, const Matrix&B){
-  int n = A.data.size();
+  int n = A.size;
   Matrix sum(n);
 
   for(int i = 0; i < n; i++)
     for(int j = 0; j < n; j++)
-      sum.data[i][j] = A.data[i][j] + B.data[i][j];
+      sum(i, j) = A(i, j) + B(i, j);
 
   return sum;
 }
 
 Matrix subtractMatrices(const Matrix& A, const Matrix& B){
-  int n = A.data.size();
+  int n = A.size;
   Matrix difference(n);
 
   for(int i = 0; i < n; i++)
     for(int j = 0; j < n; j++)
-      difference.data[i][j] = A.data[i][j] - B.data[i][j];
+      difference(i, j) = A(i, j) - B(i, j);
 
   return difference;
 }
 
 Matrix multiplyMatrices(const Matrix& A, const Matrix& B){
-  int n = A.data.size();
+  int n = A.size;
   Matrix product(n);
 
   //base case
   if(n == 1){
-    product.data[0][0] = A.data[0][0] * B.data[0][0];
+    product(0, 0) = A(0, 0) * B(0, 0);
     return product;
   }
 
@@ -56,16 +71,16 @@ Matrix multiplyMatrices(const Matrix& A, const Matrix& B){
   for(int i = 0; i < newSize; i++)
     for(int j = 0; j < newSize; j++){
       //A
-      A11.data[i][j] = A.data[i][j];
-      A12.data[i][j] = A.data[i][j + newSize];
-      A21.data[i][j] = A.data[i + newSize][j];
-      A22.data[i][j] = A.data[i + newSize][j + newSize];
+      A11(i, j) = A(i, j);
+      A12(i, j) = A(i, j + newSize);
+      A21(i, j) = A(i + newSize, j);
+      A22(i, j) = A(i + newSize, j + newSize);
 
       //B
-      B11.data[i][j] = B.data[i][j];
-      B12.data[i][j] = B.data[i][j + newSize];
-      B21.data[i][j] = B.data[i + newSize][j];
-      B22.data[i][j] = B.data[i + newSize][j + newSize];
+      B11(i, j) = B(i, j);
+      B12(i, j) = B(i, j + newSize);
+      B21(i, j) = B(i + newSize, j);
+      B22(i, j) = B(i + newSize, j + newSize);
     }
   
   //AHED
@@ -94,57 +109,60 @@ Matrix multiplyMatrices(const Matrix& A, const Matrix& B){
   //fill product matrix
   for(int i = 0; i < newSize; i++)
     for(int j = 0; j < newSize; j++){
-      product.data[i][j] = C11.data[i][j];
-      product.data[i][j + newSize] = C12.data[i][j];
-      product.data[i + newSize][j] = C21.data[i][j];
-      product.data[i + newSize][j + newSize] = C22.data[i][j];
+      product(i, j) = C11(i, j);
+      product(i, j + newSize) = C12(i, j);
+      product(i + newSize, j) = C21(i, j);
+      product(i + newSize, j + newSize) = C22(i, j);
     }
 
   return product;
 }
 
 void printMatrix(const Matrix& M){
-  for(auto& row : M.data){
-    for(auto& data : row)
-      cout << data << " ";
+  for(int i = 0; i < M.size; i++){
+    for(int j = 0; j < M.size; j++)
+      cout << M(i, j)  << " ";
     cout << endl;
   }
 }
 
 void validateSize(int size){
-  if(size % 2 != 0){
-    cerr << "size must be a multiple of 2" << endl;
-    exit(1);
-  }
+  if(size <= 0 || (size & (size - 1) != 0))
+      throw invalid_argument("size must be a power of 2 and greater than 0");
 }
 
 void populateMatrix(Matrix& M){
-  for(auto& row : M.data)
-    for(auto& data :row)
-      cin >> data;
+  for(int i = 0; i < M.size; i++)
+    for(int j = 0; j < M.size; j++)
+      cin >> M(i, j);
 }
 
 int main(){
-  int size;
-
-  cout << "enter size: " << endl;
-  cin >> size;
-  validateSize(size);
-
-  Matrix A(size), B(size);
-
-  cout << "enter values for matrix A: " << endl;
-  populateMatrix(A);
-  
-  cout << "enter values for matrix B: " << endl;
-  populateMatrix(B);
-
-  Matrix C(size);
-  
-  C = multiplyMatrices(A, B);
-
-  cout << "product matrix: " << endl;
-  printMatrix(C);
+  try{
+    int size;
+    
+    cout << "enter size for square matrices: " << endl;
+    cin >> size;
+    validateSize(size);
+    
+    Matrix A(size), B(size);
+    
+    cout << "enter values for matrix A: " << endl;
+    populateMatrix(A);
+    
+    cout << "enter values for matrix B: " << endl;
+    populateMatrix(B);
+    
+    Matrix C(size);
+    
+    C = multiplyMatrices(A, B);
+    
+    cout << "product matrix: " << endl;
+    printMatrix(C);
+  } catch (const exception& e){
+    cerr << "error: " << e.what() << endl;
+    return 1;
+  }
   
   return 0;
 }
